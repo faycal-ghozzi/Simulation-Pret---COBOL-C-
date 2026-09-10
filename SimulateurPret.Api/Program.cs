@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SimulateurPret.Api.Donnees;
-
+using SimulateurPret.Api.Modeles;
 using SimulateurPret.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,10 +27,34 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapPost("/api/simulation", async (SimulationRequete req, ServiceMoteurCobol moteur) => {
+app.MapPost("/api/simulation", async (SimulationRequete req, ServiceMoteurCobol moteur, SimulateurPretDbContext db) => {
     var resultat = await moteur.CalculerAsync(req.Montant, req.TauxAnnuel, req.DureeMois);
+
+    var simulation = new Simulation
+    {
+        Montant = req.Montant,
+        TauxAnnuel = req.TauxAnnuel,
+        DureeMois = req.DureeMois,
+        Mensualite = resultat.Mensualite,
+        CoutTotal = resultat.CoutTotal,
+        InteretsTotal = resultat.InteretsTotal,
+        DateCreation = DateTime.UtcNow
+    };
+
+    db.Simulations.Add(simulation);
+    await db.SaveChangesAsync();
+
     return Results.Ok(resultat);
 }).WithName("CalculerSimulation");
+
+app.MapGet("api/simulations", async (SimulateurPretDbContext db) =>
+{
+    var simulations = await db.Simulations
+        .OrderByDescending(s => s.DateCreation)
+        .ToListAsync();
+
+    return Results.Ok(simulations);
+}).WithName("ListerSimulations");
 
 app.Run();
 
