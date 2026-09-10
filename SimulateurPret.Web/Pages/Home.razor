@@ -1,0 +1,77 @@
+﻿@page "/"
+@inject HttpClient Http
+@inject SimulateurPret.Web.Services.ServiceAuthEtat AuthEtat
+<PageTitle>Simulateur</PageTitle>
+
+<h1>Simulateur de pret</h1>
+
+@if (!AuthEtat.EstConnecte){
+    <p>Veuillez vous <a href="/connexion">connecter</a> pour utiliser le simulateur.</p>
+} else {
+    <EditForm Model="@modele" OnValidSubmit="Calculer">
+        <div>
+            <label for="">Montant emprunte (€)</label>
+            <InputNumber @bind-Value="modele.Montant" />
+        </div>
+        <div>
+            <label for="">Taux annuel (%)</label>
+            <InputNumber @bind-Value="modele.TauxAnnuel" />
+        </div>
+        <div>
+            <label for="">Duree (mois)</label>
+            <InputNumber @bind-Value="modele.DureeMois" />
+        </div>
+        <button type="submit">Calculer</button>
+    </EditForm>
+
+    @if (resultat is not null)
+    {
+        <div class="resultat">
+            <h4>Resultat</h4>
+            <p>Mensualite : @resultat.Mensualite €</p>
+            <p>Cout total du credit : @resultat.CoutTotal €</p>
+            <p>Interets totaux : @resultat.InteretsTotal €</p>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(messageErreur)){
+        <p style="color:red">@messageErreur</p>
+    }
+}
+
+@code {
+    private ModeleSimulation modele = new();
+    private ResultatSimulation? resultat;
+    private string? messageErreur;
+
+    private class ModeleSimulation{
+        public decimal Montant {get;set;}
+        public decimal TauxAnnuel {get;set;}
+        public int DureeMois {get;set;}
+    }
+
+    private class ResultatSimulation{
+        public decimal Mensualite {get;set;}
+        public decimal CoutTotal {get;set;}
+        public decimal InteretsTotal { get;set;}
+    }
+
+    private async Task Calculer(){
+        messageErreur = null;
+
+        var requete = new HttpRequestMessage(HttpMethod.Post, "api/simulation")
+        {
+            Content = JsonContent.Create(modele)
+        };
+        requete.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", AuthEtat.Token);
+
+        var reponse = await Http.SendAsync(requete);
+
+        if (reponse.IsSuccessStatusCode){
+            resultat = await reponse.Content.ReadFromJsonAsync<ResultatSimulation>();
+        }
+        else{
+            messageErreur = "Erreur lors du calcul. Veuillez reessayer.";
+        }
+    }
+}

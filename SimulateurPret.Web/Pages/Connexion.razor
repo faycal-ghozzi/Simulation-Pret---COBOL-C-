@@ -1,0 +1,50 @@
+@page "/connexion"
+@inject HttpClient Http
+@inject SimulateurPret.Web.Services.ServiceAuthEtat AuthEtat
+@inject NavigationManager Navigation
+
+<h3>Connexion</h3>
+<EditForm Model = "@modele" OnValidSubmit="SeConnecter">
+    <div>
+        <label for="">Email</label>
+        <InputText @bind-Value="modele.Email"/>
+    </div>
+    <div>
+        <label for="">Mot de Passe</label>
+        <InputText type="password" @bind-Value=modele.MotDePasse/>
+    </div>
+    <button type="submit">Se Connecter</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(messageErreur)){
+    <p style="color:red">@messageErreur</p>
+}
+
+@code {
+    private ModeleConnexion modele = new();
+    private string? messageErreur;
+
+    private class ModeleConnexion{
+        public string Email { get; set;} = string.Empty;
+        public string MotDePasse {get; set;} = string.Empty;
+    }
+
+    private class ResponseConnexion{
+        public string Token { get; set; } = string.Empty;
+    }
+
+    private async Task SeConnecter(){
+        var reponse = await Http.PostAsJsonAsync("api/connexion", modele);
+
+        if (reponse.IsSuccessStatusCode){
+            var resultat = await reponse.Content.ReadFromJsonAsync<ResponseConnexion>();
+            if (resultat is not null)
+            {
+                AuthEtat.Connecter(resultat.Token);
+                Navigation.NavigateTo("/");
+            }
+        }else{
+            messageErreur = "Email ou mot de passe incorrect";
+        }
+    }
+}
