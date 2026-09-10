@@ -10,4 +10,6 @@ public class Simulation
     public decimal CoutTotal { get; set; }
     public decimal InteretsTotal { get; set; }
     public DateTime DateCreation { get; set; }
+    public string UserId { get; set; } = string.Empty;
+
 }
