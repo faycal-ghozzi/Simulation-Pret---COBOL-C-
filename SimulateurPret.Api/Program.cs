@@ -15,6 +15,14 @@ var builder = WebApplication.CreateBuilder(args);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("PolitiqueDev", politique =>
+    {
+        politique.WithOrigins("http://localhost:5026").AllowAnyHeader().AllowAnyMethod();
+    });
+});
+
 builder.Services.AddDbContext<SimulateurPretDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("SimulateurPretDb")
 ));
@@ -61,6 +69,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("PolitiqueDev");
 app.UseAuthentication();
 app.UseAuthorization();
 
