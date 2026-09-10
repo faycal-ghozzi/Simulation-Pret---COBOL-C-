@@ -1,0 +1,8 @@
+# .NET
+bin/
+obj/
+
+# Fichiers de test COBOL
+cobol/entree.txt
+cobol/sortie.txt
+cobol/calcul_pret
