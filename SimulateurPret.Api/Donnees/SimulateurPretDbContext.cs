@@ -12,5 +12,12 @@ public class SimulateurPretDbContext : IdentityDbContext<IdentityUser>
     {
     }
 
+    protected override void OnModelCreating(ModelBuilder builder)
+    {
+        base.OnModelCreating(builder);
+
+        builder.Entity<Simulation>().HasOne<IdentityUser>().WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
+    }
+
     public DbSet<Simulation> Simulations => Set<Simulation>();
 }
